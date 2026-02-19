@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Prescription Upload Service</title>
+    <style>
+        :root {
+            --primary-color: #2563eb;
+            --background-color: #f8fafc;
+            --card-background: #ffffff;
+            --text-color: #1e293b;
+            --border-radius: 12px;
+        }
+
+        body {
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            background-color: var(--background-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 2rem;
+            display: flex;
+            justify-content: center;
+            min-height: 100vh;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 600px;
+        }
+
+        .card {
+            background: var(--card-background);
+            padding: 2rem;
+            border-radius: var(--border-radius);
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+        }
+
+        h1 {
+            margin-top: 0;
+            color: var(--primary-color);
+            font-size: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .upload-area {
+            border: 2px dashed #cbd5e1;
+            border-radius: var(--border-radius);
+            padding: 2rem;
+            text-align: center;
+            cursor: pointer;
+            transition: border-color 0.3s ease;
+            margin-bottom: 1.5rem;
+        }
+
+        .upload-area:hover {
+            border-color: var(--primary-color);
+        }
+
+        .upload-icon {
+            font-size: 2rem;
+            margin-bottom: 1rem;
+            display: block;
+        }
+
+        button {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            width: 100%;
+            transition: background-color 0.2s;
+        }
+
+        button:hover {
+            background-color: #1d4ed8;
+        }
+
+        button:disabled {
+            background-color: #94a3b8;
+            cursor: not-allowed;
+        }
+
+        #result {
+            margin-top: 2rem;
+            white-space: pre-wrap;
+            background: #f1f5f9;
+            padding: 1rem;
+            border-radius: 8px;
+            font-family: monospace;
+            display: none;
+        }
+
+        .error {
+            color: #ef4444;
+            background: #fef2f2;
+        }
+
+        .preview-image {
+            max-width: 100%;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            display: none;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="card">
+            <h1>Prescription Upload</h1>
+
+            <div class="upload-area" id="dropZone">
+                <span class="upload-icon">📄</span>
+                <p>Click to select or drag and drop<br>Prescription Image or PDF</p>
+                <input type="file" id="fileInput" accept=".jpg,.jpeg,.png,.pdf" style="display: none">
+            </div>
+
+            <div style="margin-bottom: 1.5rem;">
+                <label for="languageSelect" style="display: block; margin-bottom: 0.5rem; font-weight: 600;">Select
+                    Prediction Language:</label>
+                <select id="languageSelect"
+                    style="width: 100%; padding: 0.75rem; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 1rem;">
+                    <option value="Hindi">Hindi (हिंदी)</option>
+                    <option value="Telugu">Telugu (తెలుగు)</option>
+                    <option value="Tamil">Tamil (தமிழ்)</option>
+                    <option value="Kannada">Kannada (ಕನ್ನಡ)</option>
+                    <option value="Malayalam">Malayalam (മലയാളം)</option>
+                    <option value="Marathi">Marathi (मराठी)</option>
+                    <option value="Bengali">Bengali (বাংলা)</option>
+                    <option value="Gujarati">Gujarati (ગુજરાતી)</option>
+                    <option value="Spanish">Spanish (Español)</option>
+                    <option value="French">French (Français)</option>
+                </select>
+            </div>
+
+            <img id="preview" class="preview-image" alt="Preview">
+
+            <button id="uploadBtn" disabled>Extract Data</button>
+
+            <div id="result"></div>
+        </div>
+    </div>
+
+    <script>
+        const dropZone = document.getElementById('dropZone');
+        const fileInput = document.getElementById('fileInput');
+        const uploadBtn = document.getElementById('uploadBtn');
+        const resultDiv = document.getElementById('result');
+        const previewImg = document.getElementById('preview');
+
+        // Handle file selection
+        dropZone.addEventListener('click', () => fileInput.click());
+
+        fileInput.addEventListener('change', handleFileSelect);
+
+        function handleFileSelect(e) {
+            const file = e.target.files[0];
+            if (file) {
+                uploadBtn.disabled = false;
+
+                // Show preview if image
+                if (file.type.startsWith('image/')) {
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        previewImg.src = e.target.result;
+                        previewImg.style.display = 'block';
+                    };
+                    reader.readAsDataURL(file);
+                } else {
+                    previewImg.style.display = 'none';
+                }
+            }
+        }
+
+        // Handle upload
+        uploadBtn.addEventListener('click', async () => {
+            const file = fileInput.files[0];
+            const language = document.getElementById('languageSelect').value;
+
+            if (!file) return;
+
+            uploadBtn.disabled = true;
+            uploadBtn.textContent = 'Processing...';
+            resultDiv.style.display = 'none';
+            resultDiv.className = '';
+
+            const formData = new FormData();
+            formData.append('file', file);
+            formData.append('language', language);
+
+            try {
+                const response = await fetch('http://localhost:8000/upload-prescription', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await response.json();
+
+                resultDiv.style.display = 'block';
+                if (response.ok) {
+                    // resultDiv.textContent = JSON.stringify(data, null, 2);
+                    renderResult(data.data);
+                } else {
+                    resultDiv.classList.add('error');
+                    resultDiv.textContent = `Error: ${data.detail || 'Upload failed'}`;
+                }
+            } catch (error) {
+                resultDiv.style.display = 'block';
+                resultDiv.classList.add('error');
+                resultDiv.textContent = `Network Error: ${error.message}\nMake sure the backend is running on port 8000.`;
+            } finally {
+                uploadBtn.disabled = false;
+                uploadBtn.textContent = 'Extract Data';
+            }
+        });
+
+        function renderResult(data) {
+            let html = `<h3>Prescription Details</h3>`;
+            html += `<p><strong>Doctor:</strong> ${data.doctor_name || 'Unknown'}</p>`;
+            if (data.doctor_id_external) {
+                html += `<p><strong>ID:</strong> ${data.doctor_id_external}</p>`;
+            }
+
+            // AI Simplification Section
+            if (data.simple_explanation) {
+                html += `
+                    <div style="background: #e0f2fe; padding: 15px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #bae6fd;">
+                        <h4 style="margin-top: 0; color: #0369a1;">📋 AI Summary (English)</h4>
+                        <p style="margin-bottom: 10px;">${data.simple_explanation}</p>
+                        <button onclick="speakText('${data.simple_explanation.replace(/'/g, "\\'")}', 'en-US')" style="width: auto; padding: 5px 10px; font-size: 0.9em;">🔊 Listen</button>
+                    </div>
+                `;
+            }
+
+            // Translation Section
+            if (data.translated_explanation) {
+                // Determine language code for speech
+                const selectedLang = document.getElementById('languageSelect').value;
+                let langCode = 'hi-IN'; // Default Hindi
+
+                const langMap = {
+                    'Hindi': 'hi-IN',
+                    'Telugu': 'te-IN',
+                    'Tamil': 'ta-IN',
+                    'Kannada': 'kn-IN',
+                    'Malayalam': 'ml-IN',
+                    'Marathi': 'mr-IN',
+                    'Bengali': 'bn-IN',
+                    'Gujarati': 'gu-IN',
+                    'Spanish': 'es-ES',
+                    'French': 'fr-FR'
+                };
+
+                if (langMap[selectedLang]) {
+                    langCode = langMap[selectedLang];
+                }
+
+                html += `
+                    <div style="background: #fef3c7; padding: 15px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #fde68a;">
+                        <h4 style="margin-top: 0; color: #b45309;">🕉️ Translation (${selectedLang})</h4>
+                        <p style="margin-bottom: 10px;">${data.translated_explanation}</p>
+                        <button onclick="speakText('${data.translated_explanation.replace(/'/g, "\\'")}', '${langCode}')" style="width: auto; padding: 5px 10px; font-size: 0.9em; background-color: #d97706;">🔊 Listen (${selectedLang})</button>
+                    </div>
+                `;
+            }
+
+            if (data.drugs && data.drugs.length > 0) {
+                html += `<h4>Medications:</h4><ul style="list-style: none; padding: 0;">`;
+                data.drugs.forEach(drug => {
+                    const slots = drug.slots.map(s =>
+                        `<span style="background: #e2e8f0; padding: 2px 6px; border-radius: 4px; font-size: 0.9em; margin-right: 4px;">${s}</span>`
+                    ).join('');
+
+                    html += `
+                        <li style="background: white; padding: 10px; margin-bottom: 8px; border-radius: 6px; border: 1px solid #e2e8f0;">
+                            <div style="font-weight: 600; color: #334155;">${drug.drug_name}</div>
+                            <div style="margin-top: 4px; color: #64748b; font-size: 0.9em;">Take: ${slots}</div>
+                        </li>
+                    `;
+                });
+                html += `</ul>`;
+
+                // Reminder Schedule (Timeline)
+                html += `<h4>⏰ Daily Schedule</h4>`;
+                html += generateTimeline(data.drugs);
+            } else {
+                html += `<p>No medications found.</p>`;
+            }
+
+            resultDiv.innerHTML = html;
+        }
+
+        // Voice Output Function
+        async function speakText(text, lang) {
+            const button = event.currentTarget; // Get the button element
+            const originalText = button.textContent;
+
+            // Stop any currently playing audio
+            if (window.currentAudio) {
+                window.currentAudio.pause();
+                window.currentAudio = null;
+                // Reset basic button state if we were playing
+                if (window.playingButton) {
+                    window.playingButton.textContent = window.playingButton.dataset.originalText || "🔊 Listen";
+                    window.playingButton.disabled = false;
+                }
+            }
+
+            // Toggle off if clicking the same button
+            if (window.playingButton === button) {
+                window.playingButton.textContent = window.playingButton.dataset.originalText || "🔊 Listen";
+                window.playingButton.disabled = false;
+                window.playingButton = null;
+                return;
+            }
+
+            button.dataset.originalText = originalText;
+            button.textContent = "⏳ Loading...";
+            button.disabled = true;
+            window.playingButton = button;
+
+            try {
+                const formData = new FormData();
+                formData.append('text', text);
+                formData.append('language', lang);
+
+                const response = await fetch('http://localhost:8000/speak', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    throw new Error(errorText || "Audio generation failed");
+                }
+
+                const blob = await response.blob();
+                const url = URL.createObjectURL(blob);
+
+                const audio = new Audio(url);
+                window.currentAudio = audio;
+
+                audio.onended = () => {
+                    button.textContent = originalText;
+                    button.disabled = false;
+                    URL.revokeObjectURL(url); // Cleanup
+                    window.currentAudio = null;
+                    window.playingButton = null;
+                };
+
+                audio.onerror = (e) => {
+                    console.error("Audio playback error", e);
+                    alert("Error playing audio.");
+                    button.textContent = originalText;
+                    button.disabled = false;
+                    window.playingButton = null;
+                };
+
+                await audio.play();
+                button.textContent = "🔊 Playing..."; // Changed from Max Vol to clearer text
+                button.disabled = false;
+
+            } catch (error) {
+                console.error("TTS Error:", error);
+                alert("Failed to load audio. Please try again.");
+                button.textContent = originalText;
+                button.disabled = false;
+                window.playingButton = null;
+            }
+        }
+        // Removed onvoiceschanged since we are not using browser TTS anymore
+
+        // Generate Visual Timeline
+        function generateTimeline(drugs) {
+            const timeSlots = {
+                'morning': { icon: '🌅', label: 'Morning', drugs: [] },
+                'afternoon': { icon: '☀️', label: 'Afternoon', drugs: [] },
+                'night': { icon: '🌙', label: 'Night', drugs: [] }
+            };
+
+            drugs.forEach(drug => {
+                drug.slots.forEach(slot => {
+                    if (timeSlots[slot]) {
+                        timeSlots[slot].drugs.push(drug.drug_name);
+                    }
+                });
+            });
+
+            let timelineHtml = `<div style="display: flex; gap: 10px; flex-wrap: wrap;">`;
+
+            for (const [key, slot] of Object.entries(timeSlots)) {
+                if (slot.drugs.length > 0) {
+                    timelineHtml += `
+                        <div style="flex: 1; min-width: 120px; background: white; padding: 10px; border-radius: 8px; border: 1px solid #cbd5e1; box-shadow: 0 1px 2px rgba(0,0,0,0.05);">
+                            <div style="font-weight: bold; margin-bottom: 8px; border-bottom: 1px solid #eee; padding-bottom: 4px;">
+                                ${slot.icon} ${slot.label}
+                            </div>
+                            <ul style="padding-left: 20px; margin: 0; font-size: 0.9em; color: #475569;">
+                                ${slot.drugs.map(d => `<li>${d}</li>`).join('')}
+                            </ul>
+                        </div>
+                    `;
+                }
+            }
+
+            timelineHtml += `</div>`;
+            return timelineHtml;
+        }
+
+        // Drag and drop handlers
+        dropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropZone.style.borderColor = '#2563eb';
+        });
+
+        dropZone.addEventListener('dragleave', (e) => {
+            e.preventDefault();
+            dropZone.style.borderColor = '#cbd5e1';
+        });
+
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZone.style.borderColor = '#cbd5e1';
+            fileInput.files = e.dataTransfer.files;
+            handleFileSelect({ target: fileInput });
+        });
+    </script>
+</body>
+
+</html>
