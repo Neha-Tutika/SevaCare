@@ -51,12 +51,20 @@ uvicorn main:app --reload
 
 The API will be available at `http://localhost:8000`
 
-📡 API Endpoints
-POST /upload-prescription
+## 📡 API Endpoints
+
+### `POST /upload-prescription`
+
 Uploads a prescription file and extracts structured data using Gemini AI.
-FieldTypeDescriptionfileFileImage (PNG/JPG) or PDF prescriptionlanguageStringTarget language for translation (default: Hindi)
-Response:
-json{
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `file` | File | Image (PNG/JPG) or PDF prescription |
+| `language` | String | Target language for translation (default: `Hindi`) |
+
+**Response:**
+```json
+{
   "status": "success",
   "data": {
     "doctor_name": "Dr. John Smith",
@@ -68,15 +76,26 @@ json{
     "translated_explanation": "सुबह और रात को पैरासिटामोल लें..."
   }
 }
+```
 
-POST /speak
+---
+
+### `POST /speak`
+
 Converts text to speech in the specified language using Edge TTS.
-FieldTypeDescriptiontextStringText to be spokenlanguageStringLanguage name or code (e.g., Hindi, hi, hi-IN)
-Response: Audio stream (audio/mpeg)
 
-GET /
+| Field | Type | Description |
+|-------|------|-------------|
+| `text` | String | Text to be spoken |
+| `language` | String | Language name or code (e.g., `Hindi`, `hi`, `hi-IN`) |
+
+**Response:** Audio stream (`audio/mpeg`)
+
+---
+
+### `GET /`
+
 Health check — returns a confirmation message that the service is running.
-
 
 🧪 Testing
 Open client.html in your browser to use the built-in frontend for uploading prescriptions and playing back audio.
