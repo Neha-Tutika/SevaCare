@@ -11,28 +11,45 @@ A FastAPI-powered backend service that extracts structured data from prescriptio
 🌍 Supports 10+ Languages — Hindi, Telugu, Tamil, Kannada, Malayalam, Marathi, Bengali, Gujarati, Spanish, French, English
 
 
-🗂️ Project Structure
-├── main.py                  # FastAPI app with /upload-prescription and /speak endpoints
-├── prescription_service.py  # Gemini AI extraction + data normalization logic
-├── list_voices.py           # Utility to list available Edge TTS voices for Indian locales
-├── client.html              # Frontend HTML client for testing the API
-├── requirements.txt         # Python dependencies
-└── README.md
+## 🗂️ Project Structure
 
-🚀 Getting Started
-1. Clone the Repository
-bashgit clone https://github.com/your-username/prescription-reader.git
+| File | Description |
+|------|-------------|
+| `main.py` | FastAPI app with `/upload-prescription` and `/speak` endpoints |
+| `prescription_service.py` | Gemini AI extraction + data normalization logic |
+| `list_voices.py` | Utility to list Edge TTS voices for Indian locales |
+| `client.html` | Frontend HTML client for testing the API |
+| `requirements.txt` | Python dependencies |
+| `.env.example` | Environment variable template |
+
+## 🚀 Getting Started
+
+### 1. Clone the Repository
+```bash
+git clone https://github.com/your-username/prescription-reader.git
 cd prescription-reader
-2. Install Dependencies
-bashpip install -r requirements.txt
-3. Set Up Environment Variables
-Create a .env file in the root directory:
-envGEMINI_API_KEY=your_gemini_api_key_here
-Get your Gemini API key from Google AI Studio
+```
 
-4. Run the Server
-bashuvicorn main:app --reload
-The API will be available at http://localhost:8000
+### 2. Install Dependencies
+```bash
+pip install -r requirements.txt
+```
+
+### 3. Set Up Environment Variables
+
+Create a `.env` file in the root directory:
+```env
+GEMINI_API_KEY=your_gemini_api_key_here
+```
+
+> Get your Gemini API key from [Google AI Studio](https://aistudio.google.com/app/apikey)
+
+### 4. Run the Server
+```bash
+uvicorn main:app --reload
+```
+
+The API will be available at `http://localhost:8000`
 
 📡 API Endpoints
 POST /upload-prescription
